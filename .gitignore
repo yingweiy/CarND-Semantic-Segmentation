@@ -101,3 +101,11 @@ ENV/
 .mypy_cache/
 
 RUNS/
+
+#this project
+data/data_road/*
+data/vgg/*
+data/gtFine_trainvaltest/
+data/vgg16.npy
+
+testmain.py
