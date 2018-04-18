@@ -44,7 +44,7 @@ def load_vgg(sess, vgg_path):
 
 tests.test_load_vgg(load_vgg, tf)
 
-def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
+def layers_old(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
     :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
@@ -85,6 +85,53 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
 
     return output
 
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
+    """
+    Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
+    :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
+    :param vgg_layer4_out: TF Tensor for VGG Layer 4 output
+    :param vgg_layer7_out: TF Tensor for VGG Layer 7 output
+    :param num_classes: Number of classes to classify
+    :return: The Tensor for the last layer of output
+    """
+
+
+    def conv1x1(input):
+        return tf.layers.conv2d(input, num_classes, 1, padding='same',
+                                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    def upsample(input, scale=2):
+        kernel_size = int(scale*4)
+        return tf.layers.conv2d_transpose(input, num_classes, kernel_size, strides = (scale, scale),
+                                          padding='same',
+                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # conv 1x1, and upsample for layer 7
+    # upsampled and then conv1x1 for layer7
+    #layer7_upsampled = upsample(vgg_layer7_out)
+    #layer7_fc = conv1x1(layer7_upsampled)
+
+    # conv 1x1, and upsample for layer 7
+    layer7_fc = conv1x1(vgg_layer7_out)
+    layer7_upsampled = upsample(layer7_fc)
+
+    # conv 1x1 for layer 4
+    layer4_fc = conv1x1(vgg_layer4_out)
+
+    # skip
+    layer4_merged = tf.add(layer7_upsampled, layer4_fc)
+    layer4_merge_upsampled = upsample(layer4_merged)
+
+    # layer 3 conv1x1 and  merged
+    layer3_fc = conv1x1(vgg_layer3_out)
+    layer3_merged = tf.add(layer4_merge_upsampled, layer3_fc)
+
+    #l3x2 = upsample(layer3_merged)
+    output = upsample(layer3_merged, scale=8)
+
+    return output
+
+
 tests.test_layers(layers)
 
 
@@ -100,9 +147,18 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     # Implement function
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     correct_label = tf.reshape(correct_label, (-1, num_classes))
+
     #with tf.name_scope('accuracy'):
+
+    #weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+
+    reg_vars = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    reg_term = tf.reduce_sum(tf.square(reg_vars))
+
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits,
                                                                   labels=correct_label))
+    loss += 0.001*reg_term
+
     optimizer = tf.train.AdamOptimizer(learning_rate)
     op = optimizer.minimize(loss)
     #tf.summary.scalar('loss', loss)
@@ -204,7 +260,9 @@ def run():
                                        logits, keep, inp)
 
         # OPTIONAL: Apply the trained model to a video
-
+        #   generate gif using the shell command below:
+        #      > convert -delay 20 -loop 0 *.png segmentation.gif
+        #   requires imagemagick installed on ubuntu
 
 
 if __name__ == '__main__':
