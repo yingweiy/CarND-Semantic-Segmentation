@@ -60,14 +60,10 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     def upsample(input, scale=2):
-        kernel_size = scale*2
+        kernel_size = int(scale*4)
         return tf.layers.conv2d_transpose(input, num_classes, kernel_size, strides = (scale, scale),
                                           padding='same',
                                           kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-        #return tf.layers.conv2d_transpose(input, num_classes, (scale, scale), strides=(scale, scale),
-        #                                  padding='valid',
-        #                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-
 
     # conv 1x1, and upsample for layer 7
     layer7_fc = conv1x1(vgg_layer7_out)
@@ -84,6 +80,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     layer3_fc = conv1x1(vgg_layer3_out)
     layer3_merged = tf.add(layer4_merge_upsampled, layer3_fc)
 
+    #l3x2 = upsample(layer3_merged)
     output = upsample(layer3_merged, scale=8)
 
     return output
@@ -165,6 +162,8 @@ def run():
     # You'll need a GPU with at least 10 teraFLOPS to train on.
     #  https://www.cityscapes-dataset.com/
 
+
+
     with tf.Session() as sess:
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
@@ -176,8 +175,8 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # Build NN using load_vgg, layers, and optimize function
-        epochs = 64
-        batch_size = 4
+        epochs = 256
+        batch_size = 6
 
         # TF placeholders
         correct_label = tf.placeholder(tf.int32, [None, None, None, num_classes], name='correct_label')
@@ -185,6 +184,9 @@ def run():
 
         inp, keep, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
         output = layers(layer3, layer4, layer7, num_classes)
+
+        saver = tf.train.Saver()
+
         logits, op, loss = optimize(output, correct_label=correct_label,
                                     learning_rate=learning_rate,
                                     num_classes=num_classes)
@@ -193,11 +195,16 @@ def run():
         train_nn(sess, epochs, batch_size, get_batches_fn, op, loss, inp,
                  correct_label, keep, learning_rate)
 
+        # tf.saved_model.simple_save(sess, "./runs", )
+        save_path = saver.save(sess, "./runs/model.ckpt")
+        print("Model saved in path: %s" % save_path)
+
         # Save inference data using helper.save_inference_samples
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape,
                                        logits, keep, inp)
 
         # OPTIONAL: Apply the trained model to a video
+
 
 
 if __name__ == '__main__':

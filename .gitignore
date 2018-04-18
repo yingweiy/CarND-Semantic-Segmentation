@@ -100,7 +100,7 @@ ENV/
 # mypy
 .mypy_cache/
 
-RUNS/
+runs/
 
 #this project
 data/data_road/*
@@ -109,3 +109,11 @@ data/gtFine_trainvaltest/
 data/vgg16.npy
 
 testmain.py
+.idea/CarND-Semantic-Segmentation.iml
+.idea/inspectionProfiles/
+.idea/misc.xml
+.idea/modules.xml
+.idea/other.xml
+.idea/workspace.xml
+data/vgg.bak/
+log/
