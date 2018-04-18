@@ -8,7 +8,7 @@ In this project, you'll label the pixels of a road in images using a Fully Convo
 * Regularization terms
 
 ### Results
-[Alt Text](./semantic_segmentation.gif)
+[Alt Text](https://github.com/yingweiy/CarND-Semantic-Segmentation/blob/master/semantic_segmentation.gif)
 
 
 ### Setup
