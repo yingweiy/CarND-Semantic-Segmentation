@@ -9,7 +9,7 @@ In this project, you'll label the pixels of a road in images using a Fully Convo
 
 ### Results
 [result]: ./semantic_segmentation.gif
-![alt Text](result)
+![alt Text][result]
 
 
 ### Setup
