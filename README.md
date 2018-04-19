@@ -3,9 +3,8 @@
 In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
 ### Main Techniques
-* Large Filter Kernel Size
-* Upsample before conv1x1 in Layer 7
-* Regularization terms
+* FCN
+* Large Filter Kernel Size in the Transposed Convolution layers
 
 ### Results
 [result]: ./semantic_segmentation.gif
